@@ -17,7 +17,7 @@ const app = express()
 	.use(express.urlencoded({ extended: false }))
 	.use(
 		cors({
-			origin: ['*'],
+			origin: process.env.CLIENT,
 			credentials: true,
 		})
 	)
