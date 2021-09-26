@@ -1,1 +1,1 @@
-worker: nodemon src/index
+web: nodemon src/index
