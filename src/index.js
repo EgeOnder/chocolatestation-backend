@@ -16,12 +16,7 @@ const authRoute = require('../routes/auth');
 const { connectToDb } = require('../functions/connectToDb');
 connectToDb(process.env.MONGODB_CONNECTION);
 
-const allowedOrigins = [
-	process.env.CLIENT,
-	process.env.CLIENT_WWW,
-	process.env.ADMIN,
-	process.env.ADMIN_WWW,
-];
+const allowedOrigins = [process.env.CLIENT, process.env.CLIENT_WWW];
 
 const app = express()
 	.use(helmet())
