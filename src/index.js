@@ -3,36 +3,66 @@ const morgan = require('morgan');
 const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
+const passport = require('passport');
+const session = require('express-session');
 
 require('dotenv').config();
 
 const contactRoute = require('../routes/contact');
 const publicRoute = require('../routes/public');
-const subscribeRoute = require('../routes/subscribe');
+const apiRoute = require('../routes/api');
+const authRoute = require('../routes/auth');
+
+const { connectToDb } = require('../functions/connectToDb');
+connectToDb(process.env.MONGODB_CONNECTION);
+
+const allowedOrigins = [
+	process.env.CLIENT,
+	process.env.CLIENT_WWW,
+	process.env.ADMIN,
+	process.env.ADMIN_WWW,
+];
 
 const app = express()
 	.use(helmet())
 	.use(morgan('common'))
-	.use(express.json())
-	.use(express.urlencoded({ extended: false }))
+	.use(express.json({ limit: '50mb' }))
+	.use(
+		express.urlencoded({
+			extended: false,
+			limit: '50mb',
+			parameterLimit: 1000000,
+		})
+	)
 	.use(
 		cors({
-			origin: process.env.CLIENT,
+			origin: allowedOrigins,
 			credentials: true,
 		})
 	)
+	.use(
+		session({
+			name: 'auth',
+			resave: true,
+			saveUninitialized: true,
+			secret: process.env.LOCAL_SECRET,
+			cookie: {
+				domain: process.env.DOMAIN,
+			},
+		})
+	)
+	.use(passport.initialize())
+	.use(passport.session())
 	.use((req, res, next) => {
-		const allowedOrigins = [process.env.CLIENT, process.env.CLIENT_WWW];
 		const origin = req.headers.origin;
 
-		if (allowedOrigins.includes(origin)) {
-			res.set('Access-Control-Allow-Origin', origin);
-		} else {
-			res.set('Access-Control-Allow-Origin', process.env.CLIENT);
-		}
-		res.set('Access-Control-Allow-Credentials', true);
-		res.set('X-Frame-Options', 'SAMEORIGIN');
-		res.set(
+		res.setHeader(
+			'Access-Control-Allow-Origin',
+			allowedOrigins.includes(origin) ? origin : process.env.CLIENT
+		);
+		res.setHeader('Access-Control-Allow-Credentials', true);
+		res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+		res.setHeader(
 			'Access-Control-Allow-Headers',
 			'Origin, X-Requested-With, Content-Type, Accept'
 		);
@@ -45,8 +75,9 @@ const apiLimiter = rateLimit({
 });
 
 app.use('/contact', apiLimiter, contactRoute);
+app.use('/api', apiRoute);
 app.use('/public', publicRoute);
-app.use('/subscribe', apiLimiter, subscribeRoute);
+app.use('/auth', authRoute);
 
 const port = process.env.PORT || 8000;
 app.listen(port, () => {
