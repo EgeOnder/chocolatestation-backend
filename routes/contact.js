@@ -13,29 +13,35 @@ function checkEmail(email) {
 }
 
 router.post('/', (req, res) => {
-	const { email, name, message } = req.body;
+	const { email, name, lastName, message } = req.body;
 
-	if (!email) return res.json({ error: 'Lütfen e-postanızı giriniz.' });
+	const loweredEmail = String(email).toLowerCase();
+
+	if (!loweredEmail)
+		return res.json({ error: 'Lütfen e-postanızı giriniz.' });
 	if (!name || name.length < 2)
 		return res.json({ error: 'Lütfen isminizi giriniz.' });
+	if (!lastName) return res.json({ error: 'Lütfen soy isminizi giriniz.' });
 	if (!message || message.length < 2)
 		return res.json({ error: 'Lütfen mesajınızı giriniz.' });
-	if (!checkEmail(email))
+	if (!checkEmail(loweredEmail))
 		return res.json({
 			error: 'Lütfen geçerli bir e-posta adresi giriniz.',
 		});
 
+	const fullName = name + ' ' + lastName;
+
 	// passed validation
 	const data = {
-		email: email,
-		name: name,
+		email: loweredEmail,
+		name: fullName,
 		message: message,
 	};
 
 	try {
 		sendMail(
 			{ email: process.env.TO_EMAIL },
-			'Chocolate Station | İletişim Formu',
+			'İletişim Formu — Chocolate Station',
 			'contact',
 			data
 		);
