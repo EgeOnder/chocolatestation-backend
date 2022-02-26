@@ -37,12 +37,16 @@ const app = express()
 	)
 	.use(
 		session({
-			name: 'auth',
+			name: 'qid',
 			resave: true,
 			saveUninitialized: true,
 			secret: process.env.LOCAL_SECRET,
 			cookie: {
 				domain: process.env.DOMAIN,
+				sameSite: 'lax',
+				httpOnly: true,
+				secure: process.env.NODE_ENV === 'prod',
+				maxAge: 1000 * 60 * 60 * 24, // 1 day
 			},
 		})
 	)
